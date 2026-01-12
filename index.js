@@ -3,33 +3,41 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 
 const app = express();
-const PORT = 3000;
 
-const jwtSecret = "21922076dadfa5951e02ba6cf986ef89";
+// ✅ PORTA CORRETA PARA RENDER
+const PORT = process.env.PORT || 3000;
+
+// ⚠️ EM PRODUÇÃO, O IDEAL É USAR ENV, MAS DEIXEI SEU SECRET
+const jwtSecret =
+  process.env.JWT_SECRET || "21922076dadfa5951e02ba6cf986ef89";
 
 app.use(express.json());
 
+// Middleware de log
+app.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.originalUrl}`);
+  next();
+});
 
-// API
+// =====================
+// LOGIN
+// =====================
 app.post("/user/login", async (req, res) => {
   try {
     const { DeviceId } = req.body;
-   const Version = "0.56";
+    const Version = "0.56";
 
     if (!DeviceId) {
-      return res.status(400).json({ error: "deviceId é obrigatório" });
+      return res.status(400).json({ error: "DeviceId é obrigatório" });
     }
 
     const sessionToken = jwt.sign(
-      {
-        userId: DeviceId,
-        DeviceId,
-      },
+      { userId: DeviceId, DeviceId },
       jwtSecret,
       { expiresIn: "30d" }
     );
 
-    user = {
+    const user = {
       User: {
         id: 1,
         deviceId: DeviceId,
@@ -37,16 +45,13 @@ app.post("/user/login", async (req, res) => {
         username: "StumbleTeste",
         country: "BR",
         token: sessionToken,
-        version: Version || "0.56",
+        version: Version,
         created: new Date().toISOString(),
         skillRating: 0,
         experience: 0,
         crowns: 0,
-         balances: {
-         gems: 0,
-         coins: 0
-         },  
-        },
+        balances: { gems: 0, coins: 0 },
+      },
       PhotonJwt: "",
       Timestamps: {
         LastLogin: new Date(),
@@ -55,7 +60,7 @@ app.post("/user/login", async (req, res) => {
       },
       TournamentX: {
         id: "",
-        minVersion: "0.56",
+        minVersion: Version,
         rounds: 0,
         awards: [],
         entryCurrencyType: "",
@@ -63,40 +68,22 @@ app.post("/user/login", async (req, res) => {
         entryCurrencyType2: "",
         entryCurrencyCost2: 0,
       },
-      EquippedCosmetics: {
-        skin: "SKIN1",
-      },
+      EquippedCosmetics: { skin: "SKIN1" },
       ActionEmotes: [],
-      PlayerRank: {
-        RankId: 0,
-        RankName: "",
-        RankIcon: "",
-      },
+      PlayerRank: { RankId: 0, RankName: "", RankIcon: "" },
       FinishRound: null,
-      Event: {
-        Id: "",
-        StartDateTime: "",
-        EndDateTime: "",
-        EventRounds: [],
-      },
-      Ranked: {
-        Id: "",
-        StartDateTime: "",
-        EndDateTime: "",
-        MapPools: [],
-      },
+      Event: { Id: "", StartDateTime: "", EndDateTime: "", EventRounds: [] },
+      Ranked: { Id: "", StartDateTime: "", EndDateTime: "", MapPools: [] },
       BattlePass: {},
       RoundLevels_v2: [],
       Skins_v4: [],
       MissionObjectives: [],
       PurchasableItems: [],
       SharedType: "",
-      GameVersion: Version || "0.56",
+      GameVersion: Version,
       TourXJwtSecret: "",
       RankedJwtSecret: "",
     };
-
-    //await userCollection.insertOne(user);
 
     res.json(user);
   } catch (error) {
@@ -105,53 +92,48 @@ app.post("/user/login", async (req, res) => {
   }
 });
 
+// =====================
+// SHARED
+// =====================
+const sharedFile = path.resolve(__dirname, "shared.json");
 
-// Shared
 app.get("/shared/1766/LIVE", (req, res) => {
-    const filePath = path.resolve(__dirname, "shared.json");
-    
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            console.error("Erro ao enviar o arquivo config.json:", err);
-            res.status(500).json({ error: "erro ao enviar o arquivo" });
-        } else {
-            console.log("Config.json chamado com sucesso!");
-        }
-    });
-});
-
-// Novo endpoint para o shared usado pelo mod
-app.get("/shared/v1/all", (req, res) => {
-  const filePath = path.resolve(__dirname, "shared.json");
-
-  res.sendFile(filePath, (err) => {
+  res.sendFile(sharedFile, (err) => {
     if (err) {
-      console.error("Erro ao enviar o arquivo shared.json:", err);
+      console.error("Erro ao enviar shared.json:", err);
       res.status(500).json({ error: "erro ao enviar o arquivo" });
     } else {
-      console.log("Shared.json chamado com sucesso via /shared/v1/all!");
+      console.log("Shared.json chamado: /shared/1766/LIVE");
     }
   });
 });
 
+app.get("/shared/v1/all", (req, res) => {
+  res.sendFile(sharedFile, (err) => {
+    if (err) {
+      console.error("Erro ao enviar shared.json:", err);
+      res.status(500).json({ error: "erro ao enviar o arquivo" });
+    } else {
+      console.log("Shared.json chamado: /shared/v1/all");
+    }
+  });
+});
 
 app.get("/user/config", (req, res) => {
-  const filePath = path.resolve(__dirname, "shared.json");
-  res.sendFile(filePath, (err) => {
+  res.sendFile(sharedFile, (err) => {
     if (err) {
-      console.error("erro ao enviar o arquivo shared.json:", err);
+      console.error("Erro ao enviar shared.json:", err);
       res.status(500).json({ error: "erro ao enviar o arquivo" });
     }
   });
 });
 
-// Teste!
-app.use((req, res, next) => {
-    console.log(`[${req.method}] ${req.originalUrl}`);
-    next();
-});
+// Evitar favicon
+app.get("/favicon.ico", (req, res) => res.status(204));
 
-// Iniciar o Server
+// =====================
+// START SERVER
+// =====================
 app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor online 🚀 Porta: ${PORT}`);
 });
