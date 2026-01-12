@@ -55,7 +55,7 @@ app.post("/user/login", async (req, res) => {
       },
       TournamentX: {
         id: "",
-        minVersion: "0.50",
+        minVersion: "0.56",
         rounds: 0,
         awards: [],
         entryCurrencyType: "",
@@ -131,4 +131,5 @@ app.use((req, res, next) => {
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
 
