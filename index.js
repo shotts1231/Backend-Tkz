@@ -55,7 +55,7 @@ app.post("/user/login", async (req, res) => {
       },
       TournamentX: {
         id: "",
-        minVersion: "0.56",
+        minVersion: "0.50",
         rounds: 0,
         awards: [],
         entryCurrencyType: "",
@@ -91,7 +91,7 @@ app.post("/user/login", async (req, res) => {
       MissionObjectives: [],
       PurchasableItems: [],
       SharedType: "",
-      GameVersion: Version || "0.56",
+      GameVersion: Version || "0.50",
       TourXJwtSecret: "",
       RankedJwtSecret: "",
     };
@@ -131,3 +131,4 @@ app.use((req, res, next) => {
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
