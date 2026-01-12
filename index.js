@@ -4,14 +4,20 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 
-// ✅ PORTA CORRETA PARA RENDER
+// ✅ Porta correta (Render + local)
 const PORT = process.env.PORT || 3000;
 
-// ⚠️ EM PRODUÇÃO, O IDEAL É USAR ENV, MAS DEIXEI SEU SECRET
+// ⚠️ Em produção use ENV, mas deixei o seu fixo
 const jwtSecret =
   process.env.JWT_SECRET || "21922076dadfa5951e02ba6cf986ef89";
 
 app.use(express.json());
+
+// 🔥 Header obrigatório pro cliente do jogo
+app.use((req, res, next) => {
+  res.setHeader("Content-Type", "application/json");
+  next();
+});
 
 // Middleware de log
 app.use((req, res, next) => {
@@ -20,77 +26,82 @@ app.use((req, res, next) => {
 });
 
 // =====================
-// LOGIN
+// LOGIN (CRÍTICO)
 // =====================
-app.post("/user/login", async (req, res) => {
+app.post("/user/login", (req, res) => {
   try {
     const { DeviceId } = req.body;
     const Version = "0.56";
 
     if (!DeviceId) {
-      return res.status(400).json({ error: "DeviceId é obrigatório" });
+      return res.status(400).json({ error: "DeviceId obrigatório" });
     }
 
-    const sessionToken = jwt.sign(
-      { userId: DeviceId, DeviceId },
+    const token = jwt.sign(
+      { deviceId: DeviceId },
       jwtSecret,
       { expiresIn: "30d" }
     );
 
-    const user = {
+    res.json({
       User: {
-        id: 1,
-        deviceId: DeviceId,
-        stumbleId: "",
-        username: "StumbleTeste",
-        country: "BR",
-        token: sessionToken,
-        version: Version,
-        created: new Date().toISOString(),
-        skillRating: 0,
-        experience: 0,
-        crowns: 0,
-        balances: { gems: 0, coins: 0 },
+        Id: DeviceId,
+        DeviceId: DeviceId,
+        Username: "StumbleCore",
+        Country: "BR",
+        Created: new Date().toISOString(),
+        Token: token,
+        Version: Version,
+        SkillRating: 0,
+        Experience: 0,
+        Crowns: 0
       },
-      PhotonJwt: "",
-      Timestamps: {
-        LastLogin: new Date(),
-        LastFinishRound: [],
-        LastFinishRoundV4: [],
-      },
-      TournamentX: {
-        id: "",
-        minVersion: Version,
-        rounds: 0,
-        awards: [],
-        entryCurrencyType: "",
-        entryCurrencyCost: 0,
-        entryCurrencyType2: "",
-        entryCurrencyCost2: 0,
-      },
-      EquippedCosmetics: { skin: "SKIN1" },
-      ActionEmotes: [],
-      PlayerRank: { RankId: 0, RankName: "", RankIcon: "" },
-      FinishRound: null,
-      Event: { Id: "", StartDateTime: "", EndDateTime: "", EventRounds: [] },
-      Ranked: { Id: "", StartDateTime: "", EndDateTime: "", MapPools: [] },
-      BattlePass: {},
-      RoundLevels_v2: [],
-      Skins_v4: [],
-      MissionObjectives: [],
-      PurchasableItems: [],
-      SharedType: "",
-      GameVersion: Version,
-      TourXJwtSecret: "",
-      RankedJwtSecret: "",
-    };
 
-    res.json(user);
-  } catch (error) {
-    console.error("Erro no login:", error);
-    res.status(500).json({ error: "erro interno no servidor" });
+      Balances: {
+        Gems: 0,
+        Coins: 0,
+        Tokens: 0
+      },
+
+      Inventory: {
+        Skins: [],
+        Emotes: [],
+        Footsteps: [],
+        Animations: []
+      },
+
+      Progression: {
+        Level: 1,
+        XP: 0
+      },
+
+      Photon: {
+        AppId: "a6a7a35b-c608-4036-b209-08123ae71f16",
+        Region: "eu",
+        Token: token
+      },
+
+      Events: [],
+      BattlePass: {},
+      Ads: { Enabled: false },
+      ABTests: {},
+      ServerTime: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("Erro no /user/login:", err);
+    res.status(500).json({ error: "erro interno" });
   }
 });
+
+// =====================
+// ENDPOINTS PÓS-LOGIN (OBRIGATÓRIOS)
+// =====================
+app.get("/user/profile", (req, res) => res.json({}));
+app.get("/user/balances", (req, res) => res.json({ Gems: 0, Coins: 0 }));
+app.get("/user/inventory", (req, res) => res.json({}));
+app.get("/user/events", (req, res) => res.json([]));
+app.get("/user/battlepass", (req, res) => res.json({}));
+app.get("/user/config", (req, res) => res.json({}));
 
 // =====================
 // SHARED
@@ -98,32 +109,19 @@ app.post("/user/login", async (req, res) => {
 const sharedFile = path.resolve(__dirname, "shared.json");
 
 app.get("/shared/1766/LIVE", (req, res) => {
-  res.sendFile(sharedFile, (err) => {
+  res.sendFile(sharedFile, err => {
     if (err) {
-      console.error("Erro ao enviar shared.json:", err);
-      res.status(500).json({ error: "erro ao enviar o arquivo" });
-    } else {
-      console.log("Shared.json chamado: /shared/1766/LIVE");
+      console.error("Erro shared:", err);
+      res.status(500).json({ error: "erro shared" });
     }
   });
 });
 
 app.get("/shared/v1/all", (req, res) => {
-  res.sendFile(sharedFile, (err) => {
+  res.sendFile(sharedFile, err => {
     if (err) {
-      console.error("Erro ao enviar shared.json:", err);
-      res.status(500).json({ error: "erro ao enviar o arquivo" });
-    } else {
-      console.log("Shared.json chamado: /shared/v1/all");
-    }
-  });
-});
-
-app.get("/user/config", (req, res) => {
-  res.sendFile(sharedFile, (err) => {
-    if (err) {
-      console.error("Erro ao enviar shared.json:", err);
-      res.status(500).json({ error: "erro ao enviar o arquivo" });
+      console.error("Erro shared:", err);
+      res.status(500).json({ error: "erro shared" });
     }
   });
 });
@@ -135,5 +133,5 @@ app.get("/favicon.ico", (req, res) => res.status(204));
 // START SERVER
 // =====================
 app.listen(PORT, () => {
-  console.log(`Servidor online 🚀 Porta: ${PORT}`);
+  console.log(`Servidor online 🚀 Porta ${PORT}`);
 });
