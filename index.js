@@ -107,7 +107,7 @@ app.post("/user/login", async (req, res) => {
 
 
 // Shared
-app.get("/shared/1766/LIVE", (req, res) => {
+app.get("/shared/1766/LIVE/shared.json", (req, res) => {
     const filePath = path.resolve(__dirname, "shared.json");
     
     res.sendFile(filePath, (err) => {
